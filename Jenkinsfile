@@ -4,30 +4,32 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/danilokkf/lab4_jenkins.git', credentialsId: 'add credentialsId'
+                // Вказуємо вашу гілку main і посилання на ваш репозиторій
+                git branch: 'main', url: 'https://github.com/danilokkf/lab4_jenkins.git'
             }
         }
         
         stage('Build') {
             steps {
-                // Крок для збірки проекту з Visual Studio
-                // Встановіть правильні шляхи до рішення/проекту та параметри MSBuild
-                bat '"path to MSBuild" test_repos.sln /t:Build /p:Configuration=Release'
+                // 1. Відновлюємо NuGet пакети (Restore)
+                // 2. Компілюємо проект (Rebuild)
+                // УВАГА: Перевірте, що шлях до MSBuild.exe правильний! (Тут для VS 2022 Community)
+                bat '"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe" test_repos.sln /t:Restore;Rebuild /p:Configuration=Release'
             }
         }
 
         stage('Test') {
             steps {
-                // Команди для запуску тестів
-                bat "x64\\Debug\\test_repos.exe --gtest_output=xml:test_report.xml"
+                // Запускаємо скомпільований тест і генеруємо XML звіт
+                bat 'x64\\Release\\test_repos.exe --gtest_output=xml:test_report.xml'
             }
         }
     }
 
     post {
-    always {
-        // Publish test results using the junit step
-         // Specify the path to the XML test result files
+        always {
+            // Публікуємо результати тестів у Jenkins
+            junit 'test_report.xml'
+        }
     }
-}
 }
